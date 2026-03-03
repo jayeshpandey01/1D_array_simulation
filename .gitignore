@@ -1,1 +1,3 @@
 dataset
+datasets/train_waveforms.csv
+dataset/test_waveforms.csv
