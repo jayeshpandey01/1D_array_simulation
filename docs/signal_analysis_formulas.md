@@ -90,4 +90,39 @@ $$\operatorname{Skewness} = \frac{\frac{1}{n} \sum_{i=1}^{n} (x_i - \mu)^3}{\lef
 Measures the "tailedness" of the probability distribution of the signal values.
 $$\operatorname{Kurtosis} = \frac{\frac{1}{n} \sum_{i=1}^{n} (x_i - \mu)^4}{\left(\frac{1}{n} \sum_{i=1}^{n} (x_i - \mu)^2\right)^2}$$
 
+---
 
+## 5. Model Comparison Framework: Technical Deep-Dive
+
+To identify signal parameters (like frequency or amplitude) optimally, this project compares two distinct modeling approaches: **Manual Feature Engineering** and **Automated Feature Learning (CNN)**.
+
+### A. Feature Extraction (Classical ML Workflow)
+Classical models like *XGBoost* or *Random Forest* cannot process raw waveform arrays effectively. We transform the 256-point signal into a compact feature vector:
+
+#### 1. Time-Domain Statistical Features
+- **RMS (Root Mean Square)**: Calculates the effective power. For periodic signals, this is highly correlated with amplitude.
+- **Peak-to-Peak**: Measures the maximum swing, direct proxy for amplitude in noise-free signals.
+- **Skewness**: Measures the asymmetry of the signal's distribution (e.g., distinguishing a sine wave from a lopsided pulse).
+- **Kurtosis**: Measures the "peakedness" or tail behavior, identifying noise spikes vs. smooth oscillations.
+
+#### 2. Frequency-Domain (FFT) Features
+FFT shifts the signal from **Time (Amplitude vs. Time)** to **Frequency (Magnitude vs. Hz)**.
+- **Dominant Frequency**: The system identifies the index $k$ with the highest magnitude $|X[k]|$ and converts it to Hz. This is the primary feature for frequency regression.
+- **Spectral Energy**: The total power in the frequency domain, used to differentiate between high-energy signals and low-amplitude noise.
+
+### B. 1D CNN Architecture (Deep Learning Workflow)
+The **1D Convolutional Neural Network** learns to extract features automatically using sliding filters.
+
+- **Conv1D Layers**: Small kernels (e.g., size 7) slide across the signal to detect "Local Motifs" like edges, curves, or periodic segments.
+- **Max Pooling**: Reduces the signal length by half after each convolution to isolate the most important activation points and improve computational efficiency.
+- **Hierarchical Features**: Earlier layers detect simple slopes; later layers detect complex periodic patterns.
+- **Global Adaptive Pooling**: Collapses the final 128 feature maps into a single vector, making the model robust to "Stationarity" (it doesn't matter *when* a sine cycle starts, just that it exists).
+
+### C. Evaluation & Ranking Algorithm
+The framework uses a rigorous statistical cycle to rank models:
+
+1.  **Standardization**: Both features and raw signals are normalized to $\mu=0, \sigma=1$ to ensure gradient stability.
+2.  **5-Fold Cross-Validation**: Data is split into 5 "folds." Models are trained on 4 and tested on 1, rotating until every sample has been used for testing. This prevents **Overfitting**.
+3.  **Metrics Ranking**:
+    - **$R^2$ Score**: The primary ranking metric. Indicates what percentage of the variance is captured by the model (Goal: 1.0).
+    - **MAE & RMSE**: Used to quantify the "error magnitude" in physical units, with RMSE specifically punishing large "outlier" misses.
