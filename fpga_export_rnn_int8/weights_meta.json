@@ -1,0 +1,70 @@
+{
+  "quant_spec": {
+    "frac_bits": null,
+    "num_bits": 8,
+    "signed": true,
+    "symmetric": true
+  },
+  "tensors": {
+    "fc.bias": {
+      "frac_bits": null,
+      "max_abs": 0.2404431253671646,
+      "num_bits": 8,
+      "scale": 0.0018932529556469654,
+      "scheme": "symmetric_per_tensor",
+      "signed": true,
+      "symmetric": true,
+      "zero_point": 0
+    },
+    "fc.weight": {
+      "frac_bits": null,
+      "max_abs": 0.5993961095809937,
+      "num_bits": 8,
+      "scale": 0.004719654406149556,
+      "scheme": "symmetric_per_tensor",
+      "signed": true,
+      "symmetric": true,
+      "zero_point": 0
+    },
+    "rnn.bias_hh_l0": {
+      "frac_bits": null,
+      "max_abs": 0.1882045716047287,
+      "num_bits": 8,
+      "scale": 0.0014819257606671552,
+      "scheme": "symmetric_per_tensor",
+      "signed": true,
+      "symmetric": true,
+      "zero_point": 0
+    },
+    "rnn.bias_ih_l0": {
+      "frac_bits": null,
+      "max_abs": 0.16012118756771088,
+      "num_bits": 8,
+      "scale": 0.0012607967525016604,
+      "scheme": "symmetric_per_tensor",
+      "signed": true,
+      "symmetric": true,
+      "zero_point": 0
+    },
+    "rnn.weight_hh_l0": {
+      "frac_bits": null,
+      "max_abs": 0.3698467016220093,
+      "num_bits": 8,
+      "scale": 0.002912178752929207,
+      "scheme": "symmetric_per_tensor",
+      "signed": true,
+      "symmetric": true,
+      "zero_point": 0
+    },
+    "rnn.weight_ih_l0": {
+      "frac_bits": null,
+      "max_abs": 0.3172912895679474,
+      "num_bits": 8,
+      "scale": 0.0024983566107712393,
+      "scheme": "symmetric_per_tensor",
+      "signed": true,
+      "symmetric": true,
+      "zero_point": 0
+    }
+  }
+}
