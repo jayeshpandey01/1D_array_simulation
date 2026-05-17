@@ -9,15 +9,15 @@ A comprehensive collection of RNN implementations, signal processing utilities, 
 - [Project Overview](#project-overview)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
+- [Parameter Identification Pipeline](#parameter-identification-pipeline)
 - [GUI Screenshot](#gui-screenshot)
 - [Source Modules](#source-modules)
-  - [Signal Analysis Module (NEW)](#signal-analysis-module-new)
+  - [Signal Analysis Module](#signal-analysis-module)
+  - [Model Comparison Framework (NEW)](#model-comparison-framework-new)
   - [Linear Regression Module](#linear-regression-module)
-  - [Signal Generation Module](#signal-generation-module)
 - [Documentation & Formulas](#documentation--formulas)
-- [Notebooks & Experiments](#notebooks--experiments)
-- [Performance Benchmarks](#performance-benchmarks)
-- [Requirements](#requirements)
+- [Signal Parameter Regression (Benchmark Results)](#signal-parameter-regression-benchmark-results)
+- [Author](#author)
 - [License](#license)
 
 ---
@@ -35,31 +35,33 @@ This repository provides a robust framework for:
 
 ## Project Structure
 
-```
+```text
 RNN-main/
-│
-├── src/
-│   ├── identify_amplitude_frequency.py  # NEW: Signal analysis (FFT, Amplitude)
-│   ├── linear_regression.py              # Advanced PyTorch regression model
-│   ├── dataset.py                        # Signal generation engine
-│   ├── multiple_signal.py                # Legacy signal generation utils
-│   └── RNN.py                            # RNN/GRU/LSTM implementations
-│
-├── docs/
-│   └── signal_analysis_formulas.md       # Comprehensive mathematical reference
-│
-├── Notebook/
-│   ├── identification.ipynb              # Signal identification & visualization
-│   ├── 01- RNN_Classification.ipynb
-│   ├── 02- RNN_Regression.ipynb
-│   ├── 03- RNN_vs_GRU_Classification.ipynb
-│   └── ... (other experiments)
-│
-├── datasets/                             # CSV datasets for training
-├── linear_output/                        # Outputs (incl. GUI screenshot)
-│   └── tkinter_output.png
-├── data/                                 # SQLite database (signals.db)
-└── README.md
+|
+|-- src/
+|   |-- identify_amplitude_frequency.py  # Signal analysis (FFT, amplitude)
+|   |-- linear_regression.py              # PyTorch regression model
+|   |-- dataset.py                        # Signal generation engine
+|   |-- multiple_signal.py                # Legacy signal generation utils
+|   |-- RNN.py                            # RNN/GRU/LSTM implementations
+|   |-- pipeline.py                       # Unified analysis/evaluation/comparison API
+|   `-- __main__.py                       # CLI: python -m src <command>
+|
+|-- docs/
+|   `-- signal_analysis_formulas.md       # Mathematical reference
+|
+|-- Notebook/
+|   |-- identification_amp_freq.ipynb
+|   |-- 01- RNN_Classification.ipynb
+|   |-- 02- RNN_Regression.ipynb
+|   |-- 03- RNN_vs_GRU_Classification.ipynb
+|   `-- ... (other experiments)
+|
+|-- datasets/                             # CSV datasets for training/evaluation
+|-- linear_output/
+|   `-- tkinter_output.png                # GUI screenshot
+|-- data/                                 # SQLite database (signals.db)
+`-- README.md
 ```
 
 ---
@@ -83,9 +85,9 @@ All commands use one entry point: **`python -m src <command>`**
 |---------|--------|
 | `generate` | Create `datasets/train_parameters.csv`, `test_parameters.csv` |
 | `analyze --csv FILE --row 0` | Analyze one row, print report |
-| `evaluate --csv FILE` | Batch metrics + plots → `outputs/evaluation/` |
+| `evaluate --csv FILE` | Batch metrics + plots -> `outputs/evaluation/` |
 | `compare --csv FILE --target frequency` | ML vs pipeline FFT baseline |
-| `run-all` | generate → evaluate → compare |
+| `run-all` | generate -> evaluate -> compare |
 | `gui` | Tkinter upload UI |
 
 ```bash
@@ -111,7 +113,7 @@ See `implement.md` for architecture and open-dataset suggestions.
 
 Desktop analyzer (`python -m src gui`): time-domain and FFT plots, parameter report, CSV upload, and SQLite import/load.
 
-![1D Signal Parameter Analyzer — Tkinter GUI](linear_output/tkinter_output.png)
+![1D Signal Parameter Analyzer - Tkinter GUI](linear_output/tkinter_output.png)
 
 ---
 
@@ -156,7 +158,7 @@ Includes formulas for:
 
 ---
 
-### Signal Parameter Regression (Benchmark Results)
+## Signal Parameter Regression (Benchmark Results)
 
 The following scores were achieved on a standardized 256-point synthetic sine wave dataset (500 samples, 50-epoch training for CNN):
 
