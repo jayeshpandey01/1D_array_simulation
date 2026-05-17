@@ -4,7 +4,7 @@ A comprehensive collection of RNN implementations, signal processing utilities, 
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [Project Overview](#project-overview)
 - [Project Structure](#project-structure)
@@ -22,7 +22,7 @@ A comprehensive collection of RNN implementations, signal processing utilities, 
 
 ---
 
-## 🎯 Project Overview
+## Project Overview
 
 This repository provides a robust framework for:
 - **Production-ready PyTorch models** for regression and time series analysis.
@@ -33,7 +33,7 @@ This repository provides a robust framework for:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 RNN-main/
@@ -64,7 +64,7 @@ RNN-main/
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ```bash
 # Install core dependencies
@@ -73,7 +73,7 @@ pip install torch torchvision numpy pandas matplotlib scipy scikit-learn xgboost
 
 ---
 
-## 🔬 Parameter Identification Pipeline
+## Parameter Identification Pipeline
 
 End-to-end workflow for **wave type, amplitude, phase, and frequency** with ground-truth evaluation.
 
@@ -115,7 +115,7 @@ Desktop analyzer (`python -m src gui`): time-domain and FFT plots, parameter rep
 
 ---
 
-## 📦 Source Modules
+## Source Modules
 
 ### Signal Analysis Module
 **Files:** `src/identify_amplitude_frequency.py`, `src/signal_report.py`, `src/evaluate_parameters.py`
@@ -144,10 +144,10 @@ A production-ready PyTorch regression model featuring:
 
 ---
 
-## 📚 Documentation & Formulas
+## Documentation & Formulas
 
 Detailed mathematical foundations for all metrics and wave generation can be found in:
-👉 **[Signal Analysis Formulas & Algorithms](docs/signal_analysis_formulas.md)**
+**[Signal Analysis Formulas & Algorithms](docs/signal_analysis_formulas.md)**
 
 Includes formulas for:
 - **Metrics**: RMS, Skewness, Kurtosis, etc.
@@ -172,10 +172,10 @@ The following scores were achieved on a standardized 256-point synthetic sine wa
 
 ---
 
-## 👤 Author
+## Author
 - **Jayesh Pandey**
 
 ---
 
-## 📝 License
+## License
 This project is open source and available under the MIT License.
