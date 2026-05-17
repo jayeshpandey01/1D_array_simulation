@@ -1,19 +1,27 @@
+"""
+Model comparison for signal parameter regression.
+
+Expected CSV schema (from precise_dataset or dataset.save_to_csv):
+  - Metadata: wave_type, frequency, amplitude, phase, snr_db (optional)
+  - Signals: signal_0 .. signal_{N-1}  (default N=256)
+  - target_col for regression: 'frequency' | 'amplitude' | 'phase'
+"""
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
-from sklearn.model_selection import train_test_split, cross_validate, KFold
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.svm import SVR
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from scipy.stats import skew, kurtosis
-from scipy.fft import fft, fftfreq
 import xgboost as xgb
+
+from src.constants import SAMPLE_RATE
+from src.features import extract_batch_features
+from src.identify_amplitude_frequency import analyze_signal_full
+from src.signal_io import signal_column_names
 
 class SignalModelComparator:
     def __init__(self, df, target_col='amplitude', random_state=42):
@@ -27,9 +35,10 @@ class SignalModelComparator:
         self.df = df
         self.target_col = target_col
         self.random_state = random_state
-        self.signal_cols = [f'signal_{i}' for i in range(256)]
-        
-        # Prepare Signal Data (X_raw) and Target (y)
+        self.signal_cols = signal_column_names(self.df)
+        if not self.signal_cols:
+            raise ValueError("DataFrame has no signal_* columns.")
+
         self.X_raw = self.df[self.signal_cols].values
         self.y = self.df[self.target_col].values
         
@@ -44,32 +53,8 @@ class SignalModelComparator:
         self.best_model = None
 
     def extract_features(self, data):
-        """Extract time-domain and FFT-based features."""
-        features = []
-        sampling_rate = 256
-        n = data.shape[1]
-        
-        for signal in data:
-            # Time-domain
-            f_mean = np.mean(signal)
-            f_std = np.std(signal)
-            f_rms = np.sqrt(np.mean(np.square(signal)))
-            f_pk_pk = np.max(signal) - np.min(signal)
-            f_skew = skew(signal)
-            f_kurt = kurtosis(signal)
-            
-            # Frequency-domain (FFT)
-            yf = np.abs(fft(signal))
-            xf = fftfreq(n, 1/sampling_rate)
-            pos_mask = xf > 0
-            xf_pos, yf_pos = xf[pos_mask], yf[pos_mask]
-            
-            f_dom_freq = xf_pos[np.argmax(yf_pos)]
-            f_spec_energy = np.sum(yf_pos**2)
-            
-            features.append([f_mean, f_std, f_rms, f_pk_pk, f_skew, f_kurt, f_dom_freq, f_spec_energy])
-            
-        return np.array(features)
+        """Delegate to src.features (single FFT implementation)."""
+        return extract_batch_features(data, sampling_rate=SAMPLE_RATE)
 
     def train_classical_models(self):
         """Train and evaluate scikit-learn models using 5-fold CV."""
@@ -112,7 +97,10 @@ class SignalModelComparator:
             }
 
     def _get_cnn_model(self):
-        """Define 1D CNN Model."""
+        """Define 1D CNN Model (requires PyTorch)."""
+        import torch
+        import torch.nn as nn
+
         class CNN1D(nn.Module):
             def __init__(self):
                 super(CNN1D, self).__init__()
@@ -141,8 +129,13 @@ class SignalModelComparator:
 
     def train_pytorch_cnn(self, epochs=50, batch_size=32):
         """Train 1D CNN using PyTorch."""
+        import torch
+        import torch.nn as nn
+        import torch.optim as optim
+        from torch.utils.data import DataLoader, TensorDataset
+
         print(f"--- Training 1D CNN for {self.target_col} ---")
-        
+
         # Scaling raw signals for CNN
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(self.X_train_raw)
@@ -225,6 +218,8 @@ class SignalModelComparator:
         y_test_sample = self.y_test[:num_samples]
         
         if self.best_model_name == 'PyTorch_CNN':
+            import torch
+
             X_scaled = self.best_model['scaler'].transform(X_test_sample)
             X_t = torch.tensor(X_scaled, dtype=torch.float32).unsqueeze(1)
             self.best_model['model_obj'].eval()
@@ -259,6 +254,65 @@ class SignalModelComparator:
         plt.legend()
         plt.grid(True)
         plt.show()
+
+    def evaluate_fft_baseline(self) -> dict:
+        """
+        Pipeline analyzer baseline (same path as GUI/evaluate).
+        Uses analyze_signal_full per test sample.
+        """
+        preds = []
+        for signal in self.X_test_raw:
+            res = analyze_signal_full(signal, sampling_rate=SAMPLE_RATE)
+            if self.target_col == "frequency":
+                preds.append(res.frequency_hz if res.frequency_hz is not None else np.nan)
+            elif self.target_col == "amplitude":
+                preds.append(res.amplitude if res.amplitude is not None else np.nan)
+            else:
+                preds.append(res.phase_rad if res.phase_rad is not None else np.nan)
+
+        preds = np.array(preds, dtype=np.float64)
+        valid = np.isfinite(preds) & np.isfinite(self.y_test)
+        if valid.sum() == 0:
+            metrics = {"Test R2": np.nan, "Test MAE": np.nan, "Test RMSE": np.nan}
+        else:
+            metrics = {
+                "Test R2": r2_score(self.y_test[valid], preds[valid]),
+                "Test MAE": mean_absolute_error(self.y_test[valid], preds[valid]),
+                "Test RMSE": np.sqrt(mean_squared_error(self.y_test[valid], preds[valid])),
+            }
+        self.results["FFT_Pipeline"] = {**metrics, "predictions": preds}
+        return metrics
+
+    @staticmethod
+    def plot_prediction_errors(
+        y_true: np.ndarray,
+        y_pred: np.ndarray,
+        target_name: str = "target",
+        save_path=None,
+    ) -> None:
+        """Scatter detected vs. actual and error histogram."""
+        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+        axes[0].scatter(y_true, y_pred, alpha=0.5, s=15)
+        lims = [min(y_true.min(), y_pred.min()), max(y_true.max(), y_pred.max())]
+        axes[0].plot(lims, lims, "r--")
+        axes[0].set_xlabel(f"Actual {target_name}")
+        axes[0].set_ylabel(f"Predicted {target_name}")
+        axes[0].set_title(f"{target_name}: predicted vs. actual")
+        axes[0].grid(True, alpha=0.3)
+
+        err = y_pred - y_true
+        axes[1].hist(err, bins=40, edgecolor="black", alpha=0.7)
+        axes[1].axvline(0, color="r", linestyle="--")
+        axes[1].set_xlabel("Prediction error")
+        axes[1].set_ylabel("Count")
+        axes[1].set_title(f"{target_name}: error distribution")
+        axes[1].grid(True, alpha=0.3)
+        fig.tight_layout()
+        if save_path:
+            fig.savefig(save_path, dpi=150)
+            plt.close(fig)
+        else:
+            plt.show()
 
 # Example Usage Template:
 # comparator = SignalModelComparator(df, target_col='amplitude')

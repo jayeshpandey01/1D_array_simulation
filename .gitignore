@@ -1,3 +1,7 @@
 datasets
 datasets/train_waveforms.csv
 dataset/test_waveforms.csv
+data/
+*.db
+tests
+src/__pycache__

@@ -39,6 +39,22 @@ where:
 4. Identify the index $k_{max}$ with the largest magnitude.
 5. Convert $k_{max}$ to Hz using the formula above to get the **Dominant Frequency**.
 
+### Parabolic Peak Refinement
+To reduce discrete bin error, the peak index is refined using parabolic interpolation on $|X[k-1]|, |X[k]|, |X[k+1]|$:
+$$\hat{k} = k + \frac{|X[k-1]| - |X[k+1]|}{2(|X[k-1]| - 2|X[k]| + |X[k+1]|)}$$
+
+### Phase from DFT
+$$\phi = \arg X[k_{peak}]$$
+For periodic sine-like signals, a least-squares fit $A\sin(2\pi f t + \phi)$ can refine phase and amplitude.
+
+### Frequency Error Metrics (Evaluation)
+Given ground-truth $f_{gt}$ and detected $f_{det}$:
+- **Error**: $\Delta f = f_{det} - f_{gt}$
+- **MAE**: $\frac{1}{n}\sum |\Delta f_i|$
+- **RMSE**: $\sqrt{\frac{1}{n}\sum (\Delta f_i)^2}$
+
+**Note:** Square, triangle, and sawtooth waves contain harmonics; reported frequency is the **fundamental** from FFT.
+
 ---
 
 ## 3. Waveform Generation Formulas

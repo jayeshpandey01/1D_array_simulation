@@ -1,0 +1,7 @@
+{
+  "wave_type": "sine",
+  "frequency": 3.0,
+  "amplitude": 1.0,
+  "phase": 0.78539816339,
+  "snr_db": null
+}

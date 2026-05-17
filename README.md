@@ -9,6 +9,7 @@ A comprehensive collection of RNN implementations, signal processing utilities, 
 - [Project Overview](#project-overview)
 - [Project Structure](#project-structure)
 - [Installation](#installation)
+- [GUI Screenshot](#gui-screenshot)
 - [Source Modules](#source-modules)
   - [Signal Analysis Module (NEW)](#signal-analysis-module-new)
   - [Linear Regression Module](#linear-regression-module)
@@ -55,7 +56,9 @@ RNN-main/
 │   └── ... (other experiments)
 │
 ├── datasets/                             # CSV datasets for training
-├── linear_output/                        # Model training outputs
+├── linear_output/                        # Outputs (incl. GUI screenshot)
+│   └── tkinter_output.png
+├── data/                                 # SQLite database (signals.db)
 └── README.md
 ```
 
@@ -65,20 +68,62 @@ RNN-main/
 
 ```bash
 # Install core dependencies
-pip install torch torchvision numpy pandas matplotlib scipy scikit-learn jupyter
+pip install torch torchvision numpy pandas matplotlib scipy scikit-learn xgboost jupyter
 ```
+
+---
+
+## 🔬 Parameter Identification Pipeline
+
+End-to-end workflow for **wave type, amplitude, phase, and frequency** with ground-truth evaluation.
+
+All commands use one entry point: **`python -m src <command>`**
+
+| Command | Action |
+|---------|--------|
+| `generate` | Create `datasets/train_parameters.csv`, `test_parameters.csv` |
+| `analyze --csv FILE --row 0` | Analyze one row, print report |
+| `evaluate --csv FILE` | Batch metrics + plots → `outputs/evaluation/` |
+| `compare --csv FILE --target frequency` | ML vs pipeline FFT baseline |
+| `run-all` | generate → evaluate → compare |
+| `gui` | Tkinter upload UI |
+
+```bash
+python -m src generate
+python -m src evaluate --csv datasets/test_parameters.csv
+python -m src analyze --csv datasets/test_parameters.csv --row 0
+python -m src compare --csv datasets/test_parameters.csv --target frequency
+python -m src gui
+```
+
+**Python API** (all routes through `src.pipeline`):
+
+```python
+from src.pipeline import analyze_one, evaluate_csv, compare_models, generate_datasets
+from src.signal_report import format_report
+```
+
+See `implement.md` for architecture and open-dataset suggestions.
+
+---
+
+## GUI Screenshot
+
+Desktop analyzer (`python -m src gui`): time-domain and FFT plots, parameter report, CSV upload, and SQLite import/load.
+
+![1D Signal Parameter Analyzer — Tkinter GUI](linear_output/tkinter_output.png)
 
 ---
 
 ## 📦 Source Modules
 
-### Signal Analysis Module (NEW)
-**File:** `src/identify_amplitude_frequency.py`
+### Signal Analysis Module
+**Files:** `src/identify_amplitude_frequency.py`, `src/signal_report.py`, `src/evaluate_parameters.py`
 
-Identify key parameters from 1D signal arrays using Fast Fourier Transform (FFT) and statistical methods.
-- **Frequency Identification**: Automatic detection of dominant frequency components.
-- **Amplitude Statistics**: Peak-to-Peak, RMS, Mean, and Standard Deviation.
-- **Visualization**: Integrated plotting functions for time and frequency domains.
+- **FFT frequency** with parabolic peak refinement
+- **Amplitude & phase** (FFT + sinusoidal least-squares fit)
+- **Rule-based wave type** classification
+- **Structured reports** and frequency-error plots vs. ground truth
 
 ### Model Comparison Framework (NEW)
 **File:** `src/comparative_analysis.py`
